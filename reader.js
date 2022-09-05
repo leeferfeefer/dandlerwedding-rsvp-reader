@@ -1,6 +1,6 @@
 require('dotenv').config()
 const { MongoClient, ServerApiVersion } = require('mongodb');
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
 const fs = require('fs');
 
 const nodemailer = require("nodemailer");
@@ -19,8 +19,7 @@ const run = async () => {
   try {
     const database = client.db(`${process.env.DB_NAME}`);
     const rsvps = await database.collection(`${process.env.DB_COLLECTION}`).find().toArray();
-    const csvWriter = createCsvWriter({
-      path: './rsvps.csv',
+    const csvStringifier = createCsvStringifier({
       header: [
         {id: 'name', title: 'NAME'},
         {id: 'alternateNames', title: 'PARTY'},
@@ -31,7 +30,7 @@ const run = async () => {
       ]
     });
 
-    csvWriter.writeRecords(rsvps.map((rsvp) => {
+    const data = csvStringifier.stringifyRecords(rsvps.map((rsvp) => {
       let rsvpStr = "";
       for (const [key, value] of Object.entries(rsvp.rsvp)) {
         rsvpStr+=key + ": " + value + "\n";
@@ -48,45 +47,37 @@ const run = async () => {
       rsvp.dietary = dietaryStr;
 
       return {...rsvp};
-    })).then(() => {
-        console.log('...Done');
+    }));
 
-        let data;
-        try {
-          data = fs.readFileSync('./rsvps.csv', 'utf8');          
-        } catch (error) {
-          console.log("Could not read data bitch");
-        }
+    console.log('...Done');
 
-        if (!data) {
-          return;
-        }
+    if (!data) {
+      return;
+    }
 
-
-        transporter.sendMail(
+    transporter.sendMail(
+      {
+        from: `${process.env.EMAIL_USER}`,
+        to: `${process.env.EMAIL_TO}`,
+        subject: "RSVP BITCH",
+        text: "😊",
+        attachments: [
           {
-            from: `${process.env.EMAIL_USER}`,
-            to: `${process.env.EMAIL_TO}`,
-            subject: "RSVP BITCH",
-            text: "😊",
-            attachments: [
-              {
-                filename: "rsvps.csv",
-                content: data,
-              },
-            ],
+            filename: "rsvps.csv",
+            content: data,
           },
-          (err, info) => {
-            if (err) {
-              console.log("Error occurred. " + err.message);
-              return process.exit(1);
-            }
-            console.log("Message sent: %s", info.messageId);
-            // Preview only available when sending through an Ethereal account
-            console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-          }
-        );
-    });
+        ],
+      },
+      (err, info) => {
+        if (err) {
+          console.log("Error occurred. " + err.message);
+          return process.exit(1);
+        }
+        console.log("Message sent: %s", info.messageId);
+        // Preview only available when sending through an Ethereal account
+        console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+      }
+    );
 
 
 
