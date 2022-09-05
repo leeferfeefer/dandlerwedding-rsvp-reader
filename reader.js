@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.CLUSTER_NAME}/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-async function run() {
+const run = async () => {
   try {
     const database = client.db(`${process.env.DB_NAME}`);
     const rsvps = await database.collection(`${process.env.DB_COLLECTION}`).find().toArray();
@@ -95,4 +95,7 @@ async function run() {
     await client.close();
   }
 }
-run().catch("ERROR! ", console.dir);
+
+module.exports = {
+  run
+};
