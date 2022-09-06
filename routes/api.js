@@ -1,13 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const { run } = require("../reader");
+require('dotenv').config()
+const AxiosService = require("../services/axios.service");
+const { writeCSV } = require("../services/csvwriter.service");
+const { sendEmail } = require("../services/emailer.service");
 
 router.get('/sendemail', async function(req, res) {
   try {
-
-    
-    await run();
-
+    const response = await AxiosService.mongoInstance.get("/endpoint/getRSVPs");
+    // console.log("response: ", response.data);
+    const rsvps = response.data;
+    const csvData = writeCSV(rsvps);
+    sendEmail(csvData);
     res.status(200).end();
   } catch (error) {
     console.log("UNKNOWN ERROR: ", JSON.stringify(error));
