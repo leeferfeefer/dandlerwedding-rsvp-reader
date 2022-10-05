@@ -8,7 +8,7 @@ const { sendEmail } = require("../services/emailer.service");
 router.get('/sendemail', async function(req, res) {
   try {
     const response = await AxiosService.mongoInstance.get("/endpoint/getRSVPs");
-    // console.log("response: ", response.data);
+    console.log("response: ", response.data);
     const rsvps = response.data;
     const csvData = writeCSV(rsvps);
     sendEmail(csvData);
